@@ -40,6 +40,7 @@ from pydantic import BaseModel, Field
 
 from langchain_core.messages import HumanMessage
 
+
 # TODO STEP 0 — import the graph building blocks from langgraph.
 # You need: StateGraph, START, END from langgraph.graph
 #           InMemorySaver from langgraph.checkpoint.memory
@@ -142,6 +143,27 @@ class AgentState(TypedDict):
 # actual sources are under the "results" key. print() it once to see.
 
 # TODO: your code here
+
+from langchain_openai import ChatOpenAI
+from langchain_tavily import TavilySearch
+from langchain_core.vectorstores import InMemoryVectorStore
+from langchain_core.embeddings import DeterministicFakeEmbedding
+
+# Initialize the LLM through OpenRouter
+llm = ChatOpenAI(
+    model="nvidia/nemotron-3-super-120b-a12b:free",
+    temperature=0,
+    base_url="https://openrouter.ai/api/v1",
+)
+
+# Create the web search tool
+search_tool = TavilySearch(max_results=5)
+
+# Create deterministic embeddings for local vector storage
+embeddings = DeterministicFakeEmbedding(size=1536)
+
+# Create an in-memory vector store for retrieval
+vector_store = InMemoryVectorStore(embeddings)
 
 
 # ============================================================
