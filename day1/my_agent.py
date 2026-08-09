@@ -296,7 +296,7 @@ def analyze_node(state: AgentState):
 def evaluate_node(state: AgentState):
     """Score the research with the STRUCTURED evaluator (Step 3)."""
     # TODO: return {"quality_score": result.score, "execution_logs": [...]}
-    
+
     # Evaluate the analyzed research using the structured schema
     prompt = f"""
     Evaluate the overall quality of this research about:
@@ -322,13 +322,42 @@ def evaluate_node(state: AgentState):
 def report_node(state: AgentState):
     """Generate the enterprise report from analyzed_data."""
     # TODO
-    pass
+
+    # Generate the final report from the accepted research analysis
+    prompt = f"""
+    Create a clear professional enterprise research report.
+
+    Topic:
+    {state['topic']}
+
+    Research:
+    {state['analyzed_data']}
+
+    Include the main findings, key insights, and conclusion.
+    """
+
+    response = llm.invoke(prompt)
+
+    return {
+        "final_report": response.content,
+        "execution_logs": [
+            "Generated final research report"
+        ],
+    }
+
 
 
 def audit_node(state: AgentState):
     """Log completion stats."""
     # TODO
-    pass
+
+    # Record the final workflow statistics
+    return {
+        "execution_logs": [
+            f"Workflow completed after {state['iteration_count']} iteration(s) "
+            f"with quality score {state['quality_score']}/10"
+        ]
+    }
 
 
 # ============================================================
