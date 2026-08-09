@@ -184,6 +184,8 @@ class QualityScore(BaseModel):
 
 # TODO: evaluator = llm.with_structured_output(QualityScore)
 
+evaluator = llm.with_structured_output(QualityScore)
+
 
 # ============================================================
 # STEP 4 — NODES
