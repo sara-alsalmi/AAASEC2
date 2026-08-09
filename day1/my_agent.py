@@ -384,7 +384,13 @@ def audit_node(state: AgentState):
 
 def quality_router(state: AgentState) -> str:
     # TODO: return "report" or "collect"
-    pass
+    
+    # Route to report if quality is good enough or retries are exhausted
+    if state["quality_score"] >= 7 or state["iteration_count"] >= 3:
+        return "report"
+
+    # Otherwise, retry collection with a changed query
+    return "collect"
 
 
 # ============================================================
