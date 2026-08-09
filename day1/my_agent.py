@@ -156,8 +156,11 @@ llm = ChatOpenAI(
     base_url="https://openrouter.ai/api/v1",
 )
 
-# Create the web search tool
-search_tool = TavilySearch(max_results=5)
+# Use fake mode for testing when the Tavily API key is not available
+if os.getenv("USE_FAKE") == "1":
+    search_tool = None
+else:
+    search_tool = TavilySearch(max_results=5)
 
 # Create deterministic embeddings for local vector storage
 embeddings = DeterministicFakeEmbedding(size=1536)
@@ -210,8 +213,20 @@ def collect_node(state: AgentState):
     iteration = state["iteration_count"] + 1
     query = f"{state['topic']} latest reliable research attempt {iteration}"
 
-    # Run the web search and keep only the returned results
-    results = search_tool.invoke({"query": query})["results"]
+    # Use a test source in fake mode, otherwise search with Tavily
+    if os.getenv("USE_FAKE") == "1":
+        results = [
+            {
+                "title": "Test source",
+                "url": "https://example.com",
+                "content": (
+                    "Enterprise agentic AI systems combine language models, "
+                    "tools, memory, planning, and evaluation."
+                ),
+            }
+        ]
+    else:
+        results = search_tool.invoke({"query": query})["results"]
 
     # Return only the state fields changed by this node
     return {
@@ -481,6 +496,36 @@ if __name__ == "__main__":
     }
     # TODO: compile, visualize, stream, print final report + logs
 
+    # Compile the graph with a checkpointer to preserve state
+    app = workflow.compile(checkpointer=InMemorySaver())
+
+    # Visualize the completed graph
+    print(app.get_graph().draw_mermaid())
+
+    # Configure a thread ID for checkpointing
+    config = {"configurable": {"thread_id": "run-1"}}
+
+    # Stream the workflow and watch the state evolve
+    final_state = None
+
+    for chunk in app.stream(
+        initial_state,
+        config,
+        stream_mode="values",
+    ):
+        final_state = chunk
+        print(
+            f"Iteration: {chunk['iteration_count']} | "
+            f"Quality: {chunk['quality_score']}"
+        )
+
+    # Print the final report and execution logs
+    print("\n=== FINAL REPORT ===")
+    print(final_state["final_report"])
+
+    print("\n=== EXECUTION LOGS ===")
+    for log in final_state["execution_logs"]:
+        print(log)
 
 # ============================================================
 # SELF-CHECK before you look at the solution
