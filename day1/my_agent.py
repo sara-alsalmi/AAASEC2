@@ -409,6 +409,39 @@ def quality_router(state: AgentState) -> str:
 
 # TODO: your code here
 
+# Create the graph using the shared agent state
+workflow = StateGraph(AgentState)
+
+# Register all workflow nodes
+workflow.add_node("collect", collect_node)
+workflow.add_node("store_memory", store_memory_node)
+workflow.add_node("analyze", analyze_node)
+workflow.add_node("evaluate", evaluate_node)
+workflow.add_node("report", report_node)
+workflow.add_node("audit", audit_node)
+
+# Define the starting point
+workflow.add_edge(START, "collect")
+
+# Define the linear flow
+workflow.add_edge("collect", "store_memory")
+workflow.add_edge("store_memory", "analyze")
+workflow.add_edge("analyze", "evaluate")
+
+# Route based on the quality score
+workflow.add_conditional_edges(
+    "evaluate",
+    quality_router,
+    {
+        "collect": "collect",
+        "report": "report",
+    },
+)
+
+# Finish the workflow
+workflow.add_edge("report", "audit")
+workflow.add_edge("audit", END)
+
 
 # ============================================================
 # STEP 7 — COMPILE with a checkpointer, VISUALIZE, RUN
