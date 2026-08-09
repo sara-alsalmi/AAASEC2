@@ -205,27 +205,118 @@ def collect_node(state: AgentState):
     # 3. results = search_tool.invoke({"query": query})["results"]
     # 4. return {"search_query": ..., "collected_data": ...,
     #            "iteration_count": ..., "execution_logs": [...]}
-    pass
+
+    # Increase the retry counter and vary the search query
+    iteration = state["iteration_count"] + 1
+    query = f"{state['topic']} latest reliable research attempt {iteration}"
+
+    # Run the web search and keep only the returned results
+    results = search_tool.invoke({"query": query})["results"]
+
+    # Return only the state fields changed by this node
+    return {
+        "search_query": query,
+        "collected_data": results,
+        "iteration_count": iteration,
+        "execution_logs": [
+            f"Iteration {iteration}: collected {len(results)} sources"
+        ],
+    }
 
 
 def store_memory_node(state: AgentState):
     """Save source contents into the vector store."""
     # TODO: vector_store.add_texts([...contents...])
-    pass
 
+    # Extract source text before storing it in vector memory
+    contents = [
+        source.get("content", "")
+        for source in state["collected_data"]
+        if source.get("content")
+    ]
 
+    # Store the collected text as vectors for later retrieval
+    if contents:
+        vector_store.add_texts(contents)
+
+    return {
+        "execution_logs": [
+            f"Stored {len(contents)} sources in vector memory"
+        ]
+    }
+
+    
 def analyze_node(state: AgentState):
     """LLM-analyze each source. Bonus: retrieve related past
     research with vector_store.similarity_search(content, k=2)
     and include it in the prompt — that's what makes this RAG."""
-    # TODO
-    pass
+    # TODO 
+
+    # Analyze each collected source and retrieve related memory
+    analyzed = []
+
+    for source in state["collected_data"]:
+        content = source.get("content", "")
+
+        related_docs = vector_store.similarity_search(content, k=2)
+        related_context = "\n".join(
+            doc.page_content for doc in related_docs
+        )
+
+        prompt = f"""
+        Research topic: {state['topic']}
+
+        Analyze this source for relevance, key findings, evidence,
+        and useful insights.
+
+        SOURCE:
+        {content}
+
+        RELATED MEMORY:
+        {related_context}
+        """
+
+        response = llm.invoke(prompt)
+
+        analyzed.append({
+            "title": source.get("title", ""),
+            "url": source.get("url", ""),
+            "content": content,
+            "analysis": response.content,
+        })
+
+    return {
+        "analyzed_data": analyzed,
+        "execution_logs": [
+            f"Analyzed {len(analyzed)} sources"
+        ],
+    }
 
 
 def evaluate_node(state: AgentState):
     """Score the research with the STRUCTURED evaluator (Step 3)."""
     # TODO: return {"quality_score": result.score, "execution_logs": [...]}
-    pass
+    
+    # Evaluate the analyzed research using the structured schema
+    prompt = f"""
+    Evaluate the overall quality of this research about:
+    {state['topic']}
+
+    Research analyses:
+    {state['analyzed_data']}
+
+    Score the quality from 1 to 10 based on relevance,
+    evidence, coverage, and usefulness.
+    """
+
+    result = evaluator.invoke(prompt)
+
+    return {
+        "quality_score": result.score,
+        "execution_logs": [
+            f"Quality score: {result.score}/10 - {result.reasoning}"
+        ],
+    }
 
 
 def report_node(state: AgentState):
