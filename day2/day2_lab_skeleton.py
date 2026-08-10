@@ -198,8 +198,41 @@ def run_persona(role: str, user_content: str) -> str:
 # WHERE TO LOOK: multi-agent docs → "Supervisor" section.
 
 def supervisor_node(state: TeamState):
-    # TODO
-    pass
+    turn_count = state["turn_count"] + 1
+
+    status = (
+        f"Turn: {turn_count}/{MAX_TURNS}\n"
+        f"Research notes: {'yes (' + str(len(state['research_notes'])) + ' entries)' if state['research_notes'] else 'none'}\n"
+        f"Analysis: {'done' if state['analysis'] else 'none'}\n"
+        f"Draft: {'done' if state['draft'] else 'none'}\n"
+        f"Critique: {state['critique'][:120] if state['critique'] else 'none'}\n"
+        f"Revisions: {state['revision_count']}/{MAX_REVISIONS}\n"
+    )
+
+    decision: RouterDecision = supervisor_llm.invoke([
+        SystemMessage(
+            "You are the supervisor of a research team. "
+            "Given the current status, decide who should act next. "
+            "The pipeline is: researcher → analyst → writer → critic → (revise or FINISH)."
+        ),
+        HumanMessage(f"Task: {state['task']}\n\nStatus:\n{status}"),
+    ])
+
+    next_agent = decision.next_agent
+
+    # guardrail (a): hard turn cap
+    if turn_count > MAX_TURNS:
+        next_agent = "FINISH"
+
+    # guardrail (b): cap revision loop even if LLM wants to continue
+    if next_agent in ("writer", "critic") and state["draft"] and state["revision_count"] >= MAX_REVISIONS:
+        next_agent = "FINISH"
+
+    return {
+        "next_agent": next_agent,
+        "turn_count": turn_count,
+        "execution_logs": [f"[supervisor t={turn_count}] → {next_agent} | {decision.reason}"],
+    }
 
 
 # ============================================================
