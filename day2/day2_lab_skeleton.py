@@ -52,6 +52,8 @@ from dotenv import load_dotenv
 from pydantic import BaseModel, Field
 
 from langchain_core.messages import HumanMessage, SystemMessage
+from langchain_openai import ChatOpenAI
+from langchain_tavily import TavilySearch
 
 # imports StateGraph, START, END from langgraph.graph
 # imports InMemorySaver from langgraph.checkpoint.memory
@@ -138,10 +140,41 @@ class RouterDecision(BaseModel):
 # yourself what could go wrong if the critic could search.
 
 PERSONAS = {
-    # TODO: four personas
+    "researcher": (
+        "You are a focused web researcher. Your ONLY job is to search for factual "
+        "information and return concise, sourced notes. "
+        "Do NOT analyze, interpret, or write prose — only gather and summarize raw facts."
+    ),
+    "analyst": (
+        "You are a rigorous data analyst. Your ONLY job is to interpret the research notes "
+        "and produce structured insights, patterns, and key findings. "
+        "Do NOT write narrative prose or search the web — only analyze what you are given."
+    ),
+    "writer": (
+        "You are a clear, engaging writer. Your ONLY job is to turn the analysis into a "
+        "well-structured, readable report for a general audience. "
+        "Do NOT search the web or add new facts not present in the analysis."
+    ),
+    "critic": (
+        "You are a strict editor and fact-checker. Your ONLY job is to review the draft "
+        "and provide specific, actionable feedback on clarity, accuracy, and completeness. "
+        "Do NOT rewrite the draft — only critique it. Be concise and direct."
+    ),
 }
 
-# TODO: llm, search_tool, supervisor_llm, run_persona
+llm = ChatOpenAI(
+    model="nvidia/nemotron-3-super-120b-a12b:free",
+    temperature=0,
+    base_url="https://openrouter.ai/api/v1",
+)
+# None in fake mode so TavilySearch never validates the missing key
+search_tool = None if os.getenv("USE_FAKE") == "1" else TavilySearch(max_results=4)
+supervisor_llm = llm.with_structured_output(RouterDecision)
+
+
+def run_persona(role: str, user_content: str) -> str:
+    response = llm.invoke([SystemMessage(PERSONAS[role]), HumanMessage(user_content)])
+    return response.content
 
 
 # ============================================================
