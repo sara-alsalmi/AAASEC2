@@ -379,7 +379,27 @@ if __name__ == "__main__":
         "next_agent": "",
         "execution_logs": [],
     }
-    # TODO: compile, visualize, stream, print final draft + stats
+
+    graph = graph_builder.compile(checkpointer=InMemorySaver())
+
+    print(graph.get_graph().draw_mermaid())
+
+    config = {"configurable": {"thread_id": "run-1"}}
+    final_state = None
+    for state in graph.stream(initial_state, config=config, stream_mode="values"):
+        final_state = state
+        agent = state.get("next_agent", "")
+        logs = state.get("execution_logs", [])
+        if logs:
+            print(logs[-1])
+
+    print("\n" + "=" * 60)
+    print("FINAL DRAFT")
+    print("=" * 60)
+    print(final_state["draft"])
+    print("\n" + "=" * 60)
+    print(f"Turns: {final_state['turn_count']} | Revisions: {final_state['revision_count']}")
+    print("=" * 60)
 
 
 # ============================================================
