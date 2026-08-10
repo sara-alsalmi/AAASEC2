@@ -53,9 +53,12 @@ from pydantic import BaseModel, Field
 
 from langchain_core.messages import HumanMessage, SystemMessage
 
-# TODO STEP 0 — same imports as Day 1:
-# StateGraph, START, END from langgraph.graph
-# InMemorySaver from langgraph.checkpoint.memory
+# imports StateGraph, START, END from langgraph.graph
+# imports InMemorySaver from langgraph.checkpoint.memory
+
+from langgraph.graph import StateGraph, START, END
+from langgraph.checkpoint.memory import InMemorySaver
+
 
 load_dotenv()
 
@@ -84,8 +87,14 @@ MAX_TURNS = 12         # cap on total supervisor decisions
 
 class TeamState(TypedDict):
     task: str
-    # TODO: add the remaining 8 keys (two use Annotated + operator.add)
-    pass
+    research_notes: Annotated[List[str], operator.add]
+    analysis: str
+    draft: str
+    critique: str
+    revision_count: int
+    turn_count: int
+    next_agent: str
+    execution_logs: Annotated[List[str], operator.add]
 
 
 # ============================================================
