@@ -243,39 +243,66 @@ def supervisor_node(state: TeamState):
 
 def researcher_node(state: TeamState):
     """Search the web (ONLY this agent may), condense to notes."""
-    # TODO:
-    # 1. results = search_tool.invoke({"query": state["task"]})["results"]
-    # 2. Format results into a raw text block (title, content, url)
-    # 3. notes = run_persona("researcher", f"Task ...\n\nSearch results:\n{raw}")
-    # 4. return {"research_notes": [notes], "execution_logs": [...]}
-    #    ^ note the LIST — research_notes is append-only!
-    pass
+    if os.getenv("USE_FAKE") == "1":
+        raw = "[FAKE] Multi-agent systems improve specialization and scalability."
+    else:
+        results = search_tool.invoke({"query": state["task"]})["results"]
+        raw = "\n\n".join(
+            f"Title: {r['title']}\nContent: {r['content']}\nURL: {r['url']}"
+            for r in results
+        )
+    notes = run_persona("researcher", f"Task: {state['task']}\n\nSearch results:\n{raw}")
+    return {
+        "research_notes": [notes],
+        "execution_logs": [f"[researcher] gathered notes ({len(notes)} chars)"],
+    }
 
 
 def analyst_node(state: TeamState):
     """Turn raw notes into analysis."""
-    # TODO: run_persona("analyst", ...) → {"analysis": ..., "execution_logs": [...]}
-    pass
+    combined_notes = "\n\n".join(state["research_notes"])
+    analysis = run_persona(
+        "analyst",
+        f"Task: {state['task']}\n\nResearch notes:\n{combined_notes}",
+    )
+    return {
+        "analysis": analysis,
+        "execution_logs": [f"[analyst] produced analysis ({len(analysis)} chars)"],
+    }
 
 
 def writer_node(state: TeamState):
     """Write the draft — or REVISE it if a critique is present."""
-    # TODO:
-    # 1. revising = critique exists and starts with "REVISE"
-    # 2. Build the prompt; when revising, include the previous draft
-    #    AND the critique so the writer knows what to fix.
-    # 3. return {"draft": ...,
-    #            "critique": "",   <- WHY reset this? (see self-check)
-    #            "revision_count": +1 only when revising,
-    #            "execution_logs": [...]}
-    pass
+    revising = bool(state["critique"] and state["critique"].startswith("REVISE"))
+    if revising:
+        prompt = (
+            f"Task: {state['task']}\n\nAnalysis:\n{state['analysis']}\n\n"
+            f"Previous draft:\n{state['draft']}\n\nCritique:\n{state['critique']}\n\n"
+            "Revise the draft addressing all critique points."
+        )
+    else:
+        prompt = f"Task: {state['task']}\n\nAnalysis:\n{state['analysis']}\n\nWrite the report."
+    draft = run_persona("writer", prompt)
+    return {
+        "draft": draft,
+        "critique": "",  # reset so supervisor sees a clean slate after revision
+        "revision_count": state["revision_count"] + (1 if revising else 0),
+        "execution_logs": [f"[writer] {'revised' if revising else 'wrote'} draft ({len(draft)} chars)"],
+    }
 
 
 def critic_node(state: TeamState):
     """Review the draft against the research notes."""
-    # TODO: run_persona("critic", ...) → the persona replies either
-    # "APPROVED" or "REVISE: <fixes>". Store it in critique.
-    pass
+    combined_notes = "\n\n".join(state["research_notes"])
+    critique = run_persona(
+        "critic",
+        f"Task: {state['task']}\n\nResearch notes:\n{combined_notes}\n\nDraft:\n{state['draft']}\n\n"
+        "Reply with either 'APPROVED' or 'REVISE: <specific fixes>'.",
+    )
+    return {
+        "critique": critique,
+        "execution_logs": [f"[critic] verdict: {critique[:80]}"],
+    }
 
 
 # ============================================================
