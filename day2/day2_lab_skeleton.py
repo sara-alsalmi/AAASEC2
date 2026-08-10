@@ -329,6 +329,28 @@ def critic_node(state: TeamState):
 
 # TODO: route_from_supervisor + graph wiring
 
+def route_from_supervisor(state: TeamState) -> str:
+    return state["next_agent"]
+
+graph_builder = StateGraph(TeamState)
+
+graph_builder.add_node("supervisor", supervisor_node)
+graph_builder.add_node("researcher", researcher_node)
+graph_builder.add_node("analyst", analyst_node)
+graph_builder.add_node("writer", writer_node)
+graph_builder.add_node("critic", critic_node)
+
+graph_builder.add_edge(START, "supervisor")
+graph_builder.add_conditional_edges(
+    "supervisor",
+    route_from_supervisor,
+    {"researcher": "researcher", "analyst": "analyst",
+     "writer": "writer", "critic": "critic", "FINISH": END},
+)
+
+for worker in ("researcher", "analyst", "writer", "critic"):
+    graph_builder.add_edge(worker, "supervisor")
+
 
 # ============================================================
 # STEP 7 — COMPILE, VISUALIZE, RUN
