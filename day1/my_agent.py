@@ -41,13 +41,8 @@ from pydantic import BaseModel, Field
 from langchain_core.messages import HumanMessage
 
 
-# TODO STEP 0 — import the graph building blocks from langgraph.
-# You need: StateGraph, START, END from langgraph.graph
-#           InMemorySaver from langgraph.checkpoint.memory
-# WHERE TO LOOK: "Graph API" docs, first code example on the page.
-# from langgraph.graph import ...
-# from langgraph.checkpoint.memory import ...
-
+# imports StateGraph, START, END from langgraph.graph
+# imports InMemorySaver from langgraph.checkpoint.memory
 from langgraph.graph import StateGraph, START, END
 from langgraph.checkpoint.memory import InMemorySaver
 
@@ -73,7 +68,6 @@ load_dotenv()
 
 class AgentState(TypedDict):
     topic: str
-    # TODO: add the remaining 6 keys (one uses Annotated + operator.add)
     search_query: str
     collected_data: List[Dict]
     analyzed_data: List[Dict]
@@ -142,7 +136,6 @@ class AgentState(TypedDict):
 # NOTE: TavilySearch.invoke({"query": q}) returns a DICT — the
 # actual sources are under the "results" key. print() it once to see.
 
-# TODO: your code here
 
 from langchain_openai import ChatOpenAI
 from langchain_tavily import TavilySearch
@@ -185,8 +178,6 @@ class QualityScore(BaseModel):
     score: int = Field(ge=1, le=10)
     reasoning: str = Field(description="One-sentence justification")
 
-# TODO: evaluator = llm.with_structured_output(QualityScore)
-
 evaluator = llm.with_structured_output(QualityScore)
 
 
@@ -202,12 +193,6 @@ evaluator = llm.with_structured_output(QualityScore)
 
 def collect_node(state: AgentState):
     """Search the web. On retries, CHANGE the query!"""
-    # TODO:
-    # 1. iteration = state["iteration_count"] + 1
-    # 2. Build a query that DIFFERS per iteration (why? see Step 5)
-    # 3. results = search_tool.invoke({"query": query})["results"]
-    # 4. return {"search_query": ..., "collected_data": ...,
-    #            "iteration_count": ..., "execution_logs": [...]}
 
     # Increase the retry counter and vary the search query
     iteration = state["iteration_count"] + 1
@@ -241,7 +226,6 @@ def collect_node(state: AgentState):
 
 def store_memory_node(state: AgentState):
     """Save source contents into the vector store."""
-    # TODO: vector_store.add_texts([...contents...])
 
     # Extract source text before storing it in vector memory
     contents = [
@@ -265,7 +249,6 @@ def analyze_node(state: AgentState):
     """LLM-analyze each source. Bonus: retrieve related past
     research with vector_store.similarity_search(content, k=2)
     and include it in the prompt — that's what makes this RAG."""
-    # TODO 
 
     # Analyze each collected source and retrieve related memory
     analyzed = []
@@ -310,7 +293,6 @@ def analyze_node(state: AgentState):
 
 def evaluate_node(state: AgentState):
     """Score the research with the STRUCTURED evaluator (Step 3)."""
-    # TODO: return {"quality_score": result.score, "execution_logs": [...]}
 
     # Evaluate the analyzed research using the structured schema
     prompt = f"""
@@ -336,7 +318,6 @@ def evaluate_node(state: AgentState):
 
 def report_node(state: AgentState):
     """Generate the enterprise report from analyzed_data."""
-    # TODO
 
     # Generate the final report from the accepted research analysis
     prompt = f"""
@@ -364,7 +345,6 @@ def report_node(state: AgentState):
 
 def audit_node(state: AgentState):
     """Log completion stats."""
-    # TODO
 
     # Record the final workflow statistics
     return {
@@ -398,7 +378,6 @@ def audit_node(state: AgentState):
 # the docs insist on termination conditions.
 
 def quality_router(state: AgentState) -> str:
-    # TODO: return "report" or "collect"
     
     # Route to report if quality is good enough or retries are exhausted
     if state["quality_score"] >= 7 or state["iteration_count"] >= 3:
@@ -422,7 +401,6 @@ def quality_router(state: AgentState) -> str:
 #
 # WHERE TO LOOK: Graph API docs → "Edges".
 
-# TODO: your code here
 
 # Create the graph using the shared agent state
 workflow = StateGraph(AgentState)
@@ -494,7 +472,6 @@ if __name__ == "__main__":
         "final_report": "",
         "execution_logs": [],
     }
-    # TODO: compile, visualize, stream, print final report + logs
 
     # Compile the graph with a checkpointer to preserve state
     app = workflow.compile(checkpointer=InMemorySaver())
