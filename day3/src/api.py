@@ -47,5 +47,32 @@ async def create_response(req: ResponseRequest):
 
 @app.get("/.well-known/agent-card.json")
 def agent_card():
-    # filled properly in 09-a2a.md
-    return {"todo": True}
+    student = os.getenv("STUDENT_NAME", "unknown")
+    public_url = os.getenv("PUBLIC_URL", "http://localhost:8000")
+    return {
+        "protocolVersion": "1.0",
+        "name": f"{student}-agent",
+        "description": (
+            "A research and analysis agent that can produce structured research briefs, "
+            "perform code review, and answer analytical questions using web search and tools."
+        ),
+        "url": f"{public_url}/v1/responses",
+        "version": "0.1.0",
+        "capabilities": {"streaming": False},
+        "defaultInputModes": ["text/plain"],
+        "defaultOutputModes": ["text/plain"],
+        "skills": [
+            {
+                "id": "research-brief",
+                "name": "Research Brief",
+                "description": "Write a one-page executive research brief on a technical topic with a fixed structure.",
+                "tags": ["research", "analysis", "brief"],
+            },
+            {
+                "id": "code-review-notes",
+                "name": "Code Review Notes",
+                "description": "Produce structured code review notes covering correctness, security, and readability.",
+                "tags": ["code-review", "security", "analysis"],
+            },
+        ],
+    }
