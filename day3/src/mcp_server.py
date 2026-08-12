@@ -1,7 +1,9 @@
 import ast
 import operator as op
+from pathlib import Path
 
 from fastmcp import FastMCP
+from fastmcp.server.providers.skills import SkillsDirectoryProvider
 
 mcp = FastMCP("sara-alsalmi Tools")
 
@@ -40,4 +42,5 @@ def word_stats(text: str) -> dict:
 
 
 if __name__ == "__main__":
+    mcp.add_provider(SkillsDirectoryProvider(roots=Path(__file__).parent.parent / "skills"))
     mcp.run(transport="http", host="0.0.0.0", port=8001)
