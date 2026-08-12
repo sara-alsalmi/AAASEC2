@@ -102,9 +102,12 @@ def build_agent():
 
 if __name__ == "__main__":
     import asyncio
+    import sys
+
+    prompt = " ".join(sys.argv[1:]) if len(sys.argv) > 1 else input("Enter prompt: ")
 
     agent = build_agent()
     result = asyncio.run(
-        agent.ainvoke({"messages": [{"role": "user", "content": "What is 17 * 23? And what time is it?"}]})
+        agent.ainvoke({"messages": [{"role": "user", "content": prompt}]})
     )
     print(result["messages"][-1].content)

@@ -462,8 +462,12 @@ workflow.add_edge("audit", END)
 #       https://docs.langchain.com/oss/python/langgraph/interrupts
 
 if __name__ == "__main__":
+    import sys
+
+    topic = " ".join(sys.argv[1:]) if len(sys.argv) > 1 else "Enterprise Agentic AI Systems"
+
     initial_state = {
-        "topic": "Enterprise Agentic AI Systems",
+        "topic": topic,
         "search_query": "",
         "collected_data": [],
         "analyzed_data": [],

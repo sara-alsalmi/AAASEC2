@@ -368,8 +368,12 @@ for worker in ("researcher", "analyst", "writer", "critic"):
 #   through the team? This is why persona boundaries matter.
 
 if __name__ == "__main__":
+    import sys
+
+    task = " ".join(sys.argv[1:]) if len(sys.argv) > 1 else "Should our company adopt multi-agent AI systems in 2026?"
+
     initial_state = {
-        "task": "Should our company adopt multi-agent AI systems in 2026?",
+        "task": task,
         "research_notes": [],
         "analysis": "",
         "draft": "",
