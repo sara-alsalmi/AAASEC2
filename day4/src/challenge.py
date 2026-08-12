@@ -59,7 +59,7 @@ ADMIN_TOKEN = os.getenv("MCP_ADMIN_TOKEN", "admin-secret-token")
 #
 # ▢ 1b. Put its tool name here:
 
-MY_TOOL_NAME = "..."          # <- e.g. "get_lab_inventory"
+MY_TOOL_NAME = "get_lab_inventory"
 
 
 # ════════════════════════════════════════════════════════════════
@@ -89,10 +89,11 @@ def fetch_my_data() -> str:
 #   you catch the model summarizing instead of computing.
 
 MISSION = (
-    "1. Call fetch_my_data to get the data. "
-    "2. Write a Python program that computes ... "        # ▢ your analysis
+    "1. Call fetch_my_data to get the lab sensor readings. "
+    "2. Write sensor_analysis.py that computes: average temperature, average humidity, "
+    "hottest room, and coldest room from the sensor data. "
     "3. Execute it with python. "
-    "4. Report exactly what the program printed, plus one insight."
+    "4. Report exactly what the program printed, plus one sentence of insight."
 )
 
 
