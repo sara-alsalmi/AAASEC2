@@ -25,4 +25,4 @@ Add 10 credits to unlock 1000 free model requests per day',
 
 ### Request Screenshot
 
-![Prompt Injection Request](prompt_injection_request.png)
+![Prompt Injection Request](fastapi_request.png)
