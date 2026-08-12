@@ -1,0 +1,39 @@
+# Day 4 Challenge Output
+
+## MCP Authentication Test
+
+I tested the MCP server authentication and authorization using different access tokens.
+
+```text
+sara2@sara:~/projects/AAASEC2/day4$ uv run python src/check_auth.py
+auth matrix against http://localhost:8002/mcp
+
+  [DENIED] no token, public tool              -> HTTPStatusError: Client error '401 Unauthorized' for url 'http://localhost:80
+  [DENIED] wrong token, public tool           -> HTTPStatusError: Client error '401 Unauthorized' for url 'http://localhost:80
+  [PASS] student token, public tool           -> 2026-08-12T21:22:06.456491+00:00
+  [DENIED] student token, PROTECTED tool      -> ToolError: Unknown tool: 'get_internal_report'
+  [PASS] admin token, PROTECTED tool          -> {'report': 'Q2 2026 Financial Report', 'months':
+
+expected: rows 1-2 rejected at the door (401 = authentication),
+row 4 rejected as 'Unknown tool' (scopes = authorization — the
+tool is hidden from you, not just refused), rows 3 and 5 succeed.
+
+---
+
+## Challenge Execution
+
+I ran the Day 4 challenge using the authenticated MCP tool and shell execution. The agent created and executed a Python file to analyze the sensor data.
+
+```text
+sara2@sara:~/projects/AAASEC2/day4$ uv run python src/challenge.py
+
+The program printed:
+Average temperature: 22.25°C
+Average humidity: 45.60%
+Hottest room: Room B (24.1°C)
+Coldest room: Server Room (18.9°C)
+
+Insight: The Server Room maintains the lowest temperature, likely due to specialized cooling for equipment, while Room B is the warmest, possibly indicating higher occupancy or equipment load.
+```
+
+The challenge completed successfully and returned the sensor analysis results.

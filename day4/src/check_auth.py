@@ -4,7 +4,7 @@ DAY 4 — Auth check script (PROVIDED — nothing to write, just run it).
     uv run python src/check_auth.py
 
 It runs the full auth matrix against your secure MCP server (port 8002)
-and prints a ✅/❌ table. Your job is to READ the output and the code,
+and prints a [DENIED]/[PASS] table. Your job is to READ the output and the code,
 not to write async code.
 
 ────────────────────────────────────────────────────────────────────
@@ -54,13 +54,13 @@ async def attempt(label: str, token: str | None, tool: str) -> None:
         # Rule 3's context-manager cousin: open connection, use it, close it.
         async with Client(URL, auth=auth) as client:
             result = await client.call_tool(tool, {})          # rule 2
-            print(f"  ✅ {label:34} -> {str(result.data)[:48]}")
+            print(f"  [PASS] {label:34} -> {str(result.data)[:48]}")
     except Exception as e:
         # Both rejections land here. Read the message:
         #   401 Unauthorized  -> authentication failed (who are you?)
         #   Unknown tool      -> authorization failed  (you can't even
         #                        SEE tools your scopes don't allow!)
-        print(f"  ❌ {label:34} -> {type(e).__name__}: {str(e)[:60]}")
+        print(f"  [DENIED] {label:34} -> {type(e).__name__}: {str(e)[:60]}")
 
 
 async def main() -> None:
