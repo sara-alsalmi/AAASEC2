@@ -1,6 +1,10 @@
-# Day 1 Lab — Build an Enterprise Research Agent with LangGraph
+# Day 1 — Enterprise Research Agent with LangGraph
 
-You will build this system yourself, one TODO at a time:
+## Overview
+
+This lab implements a single autonomous research agent using [LangGraph](https://docs.langchain.com/oss/python/langgraph/overview). The agent accepts a topic, collects information from the web, stores it in vector memory, analyzes it using a language model, and iteratively refines its research until a quality threshold is met before generating a final report.
+
+The implemented system (`my_agent.py`) follows this pipeline:
 
 ```
 START → collect → store_memory → analyze → evaluate
@@ -11,38 +15,43 @@ START → collect → store_memory → analyze → evaluate
                                        report → audit → END
 ```
 
-## What's in this repo
+## Implementation Summary
 
-| File | What it is |
+The agent was built step-by-step through the following components:
+
+**State (`AgentState`)** — A `TypedDict` representing the shared state across all nodes. `execution_logs` uses an `operator.add` reducer so each node appends its log entries rather than overwriting them.
+
+**Nodes:**
+- `collect_node` — Queries the web via Tavily. The search query is varied on each retry to avoid receiving identical results in repeated iterations.
+- `store_memory_node` — Saves collected source text into an `InMemoryVectorStore` with `DeterministicFakeEmbedding`, enabling retrieval-augmented generation (RAG) in subsequent iterations.
+- `analyze_node` — For each source, retrieves related past content from the vector store and uses the LLM to produce a structured analysis covering relevance, key findings, and insights.
+- `evaluate_node` — Scores overall research quality (1–10) using `llm.with_structured_output(QualityScore)`, ensuring a typed response rather than parsing free text.
+- `report_node` — Generates a professional enterprise research report from all analyzed sources.
+- `audit_node` — Records final workflow statistics (total iterations and quality score).
+
+**Routing (`quality_router`)** — A conditional edge that routes back to `collect` if the quality score is below 7 and the iteration count is under 3; otherwise proceeds to `report`. Both conditions are required to guarantee termination.
+
+**Compilation** — The graph is compiled with `InMemorySaver` as a checkpointer, enabling state persistence across nodes and support for time-travel debugging. The graph structure is visualized using `draw_mermaid()`.
+
+## Files
+
+| File | Description |
 |---|---|
-| `day1_lab_skeleton.ipynb` | **Start here.** The lab notebook with TODOs |
-| `day1_lab_skeleton.py` | Same skeleton as a plain script (use this for git — see below) |
-| `day1_lab_solution.ipynb` / `day1_lab_solution.py` | Reference solution — only open after the self-check |
-| `Day1.pdf` | Day 1 slides |
-| `pyproject.toml` | Project dependencies, managed by **uv** |
-| `.env.example` | Template for your API keys |
+| `my_agent.py` | Complete agent implementation |
+| `pyproject.toml` | Project dependencies managed by **uv** |
+| `.env.example` | Template for API keys |
 
-## Quick start (5 minutes)
+## Running the Agent
 
 ```bash
-# 1. Install uv (once)
-curl -LsSf https://astral.sh/uv/install.sh | sh     # Linux / macOS / WSL
-
-# 2. Install everything (creates .venv, installs exact pinned versions)
 uv sync
+cp .env.example .env   # add your OpenRouter key (and optionally Tavily key)
 
-# 3. Set up your keys
-cp .env.example .env
-#    → edit .env and paste your OpenRouter + Tavily keys
-#    → OR skip keys entirely and run offline with USE_FAKE=1
+# Offline test — no API keys required
+USE_FAKE=1 uv run python my_agent.py
 
-# 4. Launch the lab
-uv run jupyter lab
-#    → open day1_lab_skeleton.ipynb
-
-# Running the .py versions instead:
-uv run python day1_lab_skeleton.py
-USE_FAKE=1 uv run python day1_lab_solution.py   # offline smoke test, no keys needed
+# Full run with real LLM and web search
+uv run python my_agent.py
 ```
 
 ## Using uv
